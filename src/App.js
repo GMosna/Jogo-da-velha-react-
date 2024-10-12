@@ -3,15 +3,15 @@ import { useState } from 'react';
 
 function Square({ value, onSquareClick }) {
   return (
-    <button className="square" onClick={onSquareClick}>
+    <button className="square" onClick={onSquareClick} disabled={!!value}>
       {value}
     </button>
   );
 }
 
-function Board({ xIsNext, squares, onPlay }) {
+function Board({ xIsNext, squares, onPlay, gameOver }) {
   function handleClick(i) {
-    if (calculateWinner(squares) || squares[i]) {
+    if (calculateWinner(squares) || squares[i] || gameOver) {
       return;
     }
     const nextSquares = squares.slice();
@@ -26,9 +26,9 @@ function Board({ xIsNext, squares, onPlay }) {
   const winner = calculateWinner(squares);
   let status;
   if (winner) {
-    status = 'Winner: ' + winner;
+    status = `Ganhador:  ${winner}`;
   } else {
-    status = 'Next player: ' + (xIsNext ? 'X' : 'O');
+    status = `Próximo :  ${xIsNext ? 'X' : 'O'}`;
   }
 
   return (
@@ -56,25 +56,45 @@ function Board({ xIsNext, squares, onPlay }) {
 export default function Game() {
   const [history, setHistory] = useState([Array(9).fill(null)]);
   const [currentMove, setCurrentMove] = useState(0);
+  const [xWins, setXWins] = useState(0);
+  const [oWins, setOWins] = useState(0); 
   const xIsNext = currentMove % 2 === 0;
   const currentSquares = history[currentMove];
+
+  const winner = calculateWinner(currentSquares);
+  const gameOver = !!winner;
 
   function handlePlay(nextSquares) {
     const nextHistory = [...history.slice(0, currentMove + 1), nextSquares];
     setHistory(nextHistory);
     setCurrentMove(nextHistory.length - 1);
+
+    const newWinner = calculateWinner(nextSquares);
+    if (newWinner === 'X') {
+      setXWins(xWins + 1);
+    } else if (newWinner === 'O') {
+      setOWins(oWins + 1);
+    }
   }
 
   function jumpTo(nextMove) {
     setCurrentMove(nextMove);
   }
 
+  
+  function resetGameAndScore() {
+    setHistory([Array(9).fill(null)]); 
+    setCurrentMove(0);
+    setXWins(0); 
+    setOWins(0);
+  }
+
   const moves = history.map((squares, move) => {
     let description;
     if (move > 0) {
-      description = 'Go to move #' + move;
+      description = 'Etapa ' + move;
     } else {
-      description = 'Go to game start';
+      description = 'Começar o Jogo';
     }
     return (
       <li key={move}>
@@ -86,9 +106,15 @@ export default function Game() {
   return (
     <div className="game">
       <div className="game-board">
-        <Board xIsNext={xIsNext} squares={currentSquares} onPlay={handlePlay} />
+        <Board xIsNext={xIsNext} squares={currentSquares} onPlay={handlePlay} gameOver={gameOver} />
       </div>
       <div className="game-info">
+        <div>
+          <h3>Placar</h3>
+          <p>Jogador X: {xWins}</p>
+          <p>Jogador O: {oWins}</p>
+          <button onClick={resetGameAndScore}>Resetar Jogo e Placar</button> 
+        </div>
         <ol>{moves}</ol>
       </div>
     </div>
